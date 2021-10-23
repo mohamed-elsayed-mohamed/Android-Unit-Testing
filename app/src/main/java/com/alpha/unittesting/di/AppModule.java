@@ -6,6 +6,7 @@ import androidx.room.Room;
 
 import com.alpha.unittesting.persistence.NoteDao;
 import com.alpha.unittesting.persistence.NoteDatabase;
+import com.alpha.unittesting.repository.NoteRepository;
 
 import javax.inject.Singleton;
 
@@ -24,5 +25,11 @@ public class AppModule {
     @Provides
     static NoteDao provideNoteDao(NoteDatabase noteDatabase){
         return noteDatabase.getNoteDao();
+    }
+
+    @Singleton
+    @Provides
+    static NoteRepository provideNoteRepository(NoteDao noteDao){
+        return new NoteRepository(noteDao);
     }
 }

@@ -1,6 +1,6 @@
 package com.alpha.unittesting.di;
 
-import com.alpha.unittesting.NotesListActivity;
+import com.alpha.unittesting.ui.noteslist.NotesListActivity;
 
 import dagger.Module;
 import dagger.android.ContributesAndroidInjector;
