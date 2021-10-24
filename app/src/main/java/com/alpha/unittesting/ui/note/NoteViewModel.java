@@ -1,20 +1,21 @@
 package com.alpha.unittesting.ui.note;
 
-import android.arch.lifecycle.LiveDataReactiveStreams;
-
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.LiveDataReactiveStreams;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.alpha.unittesting.models.Note;
 import com.alpha.unittesting.repository.NoteRepository;
 import com.alpha.unittesting.ui.Resource;
 import com.alpha.unittesting.utils.DateUtils;
-
+import org.reactivestreams.Subscription;
 import javax.inject.Inject;
+import io.reactivex.functions.Consumer;
 
 public class NoteViewModel extends ViewModel {
 
     private static final String TAG = "NoteViewModel";
+    public static final String NO_CONTENT_ERROR = "Can't save note with no content";
 
     protected enum ViewState {VIEW, EDIT}
 
@@ -25,15 +26,22 @@ public class NoteViewModel extends ViewModel {
     private MutableLiveData<Note> note = new MutableLiveData<>();
     private MutableLiveData<ViewState> viewState = new MutableLiveData<>();
     private boolean isNewNote;
+    private Subscription updateSubscription, insertSubscription;
 
     @Inject
     public NoteViewModel(NoteRepository noteRepository) {
         this.noteRepository = noteRepository;
     }
 
-    public android.arch.lifecycle.LiveData<Resource<Integer>> insertNote() throws Exception {
+    public LiveData<Resource<Integer>> insertNote() throws Exception {
         return LiveDataReactiveStreams.fromPublisher(
           noteRepository.insertNote(note.getValue())
+                .doOnSubscribe(new Consumer<Subscription>() {
+                    @Override
+                    public void accept(Subscription subscription) throws Exception {
+                        insertSubscription = subscription;
+                    }
+                })
         );
     }
 
@@ -53,8 +61,72 @@ public class NoteViewModel extends ViewModel {
         this.isNewNote = isNewNote;
     }
 
-    public LiveData<Resource<Integer>> saveNote(){
-        return null;
+    public LiveData<Resource<Integer>> saveNote() throws Exception{
+        if (!shouldAllowSave())
+            throw new Exception(NO_CONTENT_ERROR);
+        cancelPendingTransactions();
+        return new NoteInsertUpdateHelper<Integer>(){
+
+            @Override
+            public void setNoteId(int noteId) {
+                isNewNote = false;
+                Note currentNote = note.getValue();
+                currentNote.setId(noteId);
+                note.setValue(currentNote);
+            }
+
+            @Override
+            public LiveData<Resource<Integer>> getAction() throws Exception {
+                if(isNewNote)
+                    return insertNote();
+                return updateNote();
+            }
+
+            @Override
+            public String defineAction() {
+                if(isNewNote)
+                    return ACTION_INSERT;
+                return ACTION_UPDATE;
+            }
+
+            @Override
+            public void onTransactionComplete() {
+                updateSubscription = null;
+                insertSubscription = null;
+            }
+        }.getAsLiveData();
+    }
+
+    public LiveData<Resource<Integer>> updateNote() throws Exception{
+        return LiveDataReactiveStreams.fromPublisher(noteRepository.updateNote(note.getValue())
+                .doOnSubscribe(new Consumer<Subscription>() {
+                    @Override
+                    public void accept(Subscription subscription) throws Exception {
+                        updateSubscription = subscription;
+                    }
+                }));
+    }
+
+    private void cancelPendingTransactions(){
+        if(insertSubscription != null)
+            cancelInsertTransaction();
+
+        if(updateSubscription != null)
+            cancelUpdateTransaction();
+    }
+
+    private void cancelUpdateTransaction(){
+        updateSubscription.cancel();
+        updateSubscription = null;
+    }
+
+    private void cancelInsertTransaction(){
+        insertSubscription.cancel();
+        insertSubscription = null;
+    }
+
+    private boolean shouldAllowSave(){
+        return removeWhiteSpace(note.getValue().getContent()).length() > 0;
     }
 
     public void updateNote(String title, String content) throws Exception{

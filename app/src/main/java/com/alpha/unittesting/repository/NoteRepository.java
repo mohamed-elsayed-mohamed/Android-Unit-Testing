@@ -25,6 +25,7 @@ public class NoteRepository {
     public static final String INSERT_FAILURE = "Insert failure";
 
     private int timeDelay = 0;
+//    private int timeDelay = 2;
     private TimeUnit timeUnit = TimeUnit.SECONDS;
 
     // inject

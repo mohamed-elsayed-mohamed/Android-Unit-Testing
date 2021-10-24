@@ -1,23 +1,20 @@
 package com.alpha.unittesting.repository;
 
-import android.util.Log;
-
 import com.alpha.unittesting.models.Note;
 import com.alpha.unittesting.persistence.NoteDao;
 import com.alpha.unittesting.ui.Resource;
 import com.alpha.unittesting.utils.TestUtil;
-
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-import org.mockito.Mockito;
-import org.mockito.internal.matchers.Not;
-
 import io.reactivex.Single;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 class NoteRepositoryTest {
     private NoteRepository SUT;

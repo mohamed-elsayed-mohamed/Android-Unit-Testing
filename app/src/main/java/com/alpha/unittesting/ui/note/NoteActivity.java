@@ -2,7 +2,7 @@ package com.alpha.unittesting.ui.note;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModelProviders;
+import androidx.lifecycle.ViewModelProvider;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -22,7 +22,6 @@ import android.widget.TextView;
 import com.alpha.unittesting.R;
 import com.alpha.unittesting.models.Note;
 import com.alpha.unittesting.ui.Resource;
-import com.alpha.unittesting.ui.note.NoteViewModel;
 import com.alpha.unittesting.utils.DateUtils;
 import com.alpha.unittesting.utils.LinedEditText;
 import com.alpha.unittesting.viewmodels.ViewModelProviderFactory;
@@ -68,7 +67,7 @@ public class NoteActivity extends DaggerAppCompatActivity implements
         backArrowContrainer = findViewById(R.id.back_arrow_container);
         parent = findViewById(R.id.parent);
 
-        viewModel = ViewModelProviders.of(this, providerFactory).get(NoteViewModel.class);
+        viewModel = new ViewModelProvider(this, providerFactory).get(NoteViewModel.class);
 
         subscribeObservers();
         setListeners();

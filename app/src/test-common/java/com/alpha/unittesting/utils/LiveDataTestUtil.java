@@ -36,32 +36,5 @@ public class LiveDataTestUtil<T> {
         }
         return null;
     }
-
-    public T getValue(final android.arch.lifecycle.LiveData<T> liveData) throws InterruptedException {
-
-        final List<T> data = new ArrayList<>();
-
-        // latch for blocking thread until data is set
-        final CountDownLatch latch = new CountDownLatch(1);
-
-        android.arch.lifecycle.Observer<T> observer = new android.arch.lifecycle.Observer<T>() {
-            @Override
-            public void onChanged(T t) {
-                data.add(t);
-                latch.countDown(); // release the latch
-                liveData.removeObserver(this);
-            }
-        };
-        liveData.observeForever(observer);
-        try {
-            latch.await(2, TimeUnit.SECONDS); // wait for onChanged to fire and set data
-        } catch (InterruptedException e) {
-            throw new InterruptedException("Latch failure");
-        }
-        if(data.size() > 0){
-            return data.get(0);
-        }
-        return null;
-    }
 }
 
