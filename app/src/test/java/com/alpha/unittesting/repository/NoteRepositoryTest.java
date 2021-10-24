@@ -1,13 +1,28 @@
 package com.alpha.unittesting.repository;
 
+import androidx.lifecycle.MutableLiveData;
+
 import com.alpha.unittesting.models.Note;
 import com.alpha.unittesting.persistence.NoteDao;
 import com.alpha.unittesting.ui.Resource;
+import com.alpha.unittesting.utils.InstantExecutorExtension;
+import com.alpha.unittesting.utils.LiveDataTestUtil;
 import com.alpha.unittesting.utils.TestUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
+import org.mockito.internal.matchers.Not;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import io.reactivex.Single;
+
+import static com.alpha.unittesting.repository.NoteRepository.DELETE_FAILURE;
+import static com.alpha.unittesting.repository.NoteRepository.DELETE_SUCCESS;
+import static com.alpha.unittesting.repository.NoteRepository.INVALID_NOTE_ID;
+import static com.alpha.unittesting.utils.TestUtil.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
@@ -16,6 +31,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(InstantExecutorExtension.class)
 class NoteRepositoryTest {
     private NoteRepository SUT;
 
@@ -45,7 +61,7 @@ class NoteRepositoryTest {
         when(noteDao.insertNote(any(Note.class))).thenReturn(returnedData);
 
         // Act
-        final Resource<Integer> returnedValue = SUT.insertNote(TestUtil.TEST_NOTES_LIST.get(0)).blockingFirst();
+        final Resource<Integer> returnedValue = SUT.insertNote(TEST_NOTES_LIST.get(0)).blockingFirst();
 
         // Assert
         verify(noteDao).insertNote(any(Note.class));
@@ -54,7 +70,7 @@ class NoteRepositoryTest {
         assertEquals(Resource.success(1, NoteRepository.INSERT_SUCCESS), returnedValue);
 
         // Or test using RxJava
-        SUT.insertNote(TestUtil.TEST_NOTES_LIST.get(0))
+        SUT.insertNote(TEST_NOTES_LIST.get(0))
                 .test()
                 .await()
                 .assertValue(Resource.success(1, NoteRepository.INSERT_SUCCESS));
@@ -74,7 +90,7 @@ class NoteRepositoryTest {
         when(noteDao.insertNote(any(Note.class))).thenReturn(returnedData);
 
         // Act
-        final Resource<Integer> returnedValue = SUT.insertNote(TestUtil.TEST_NOTES_LIST.get(0)).blockingFirst();
+        final Resource<Integer> returnedValue = SUT.insertNote(TEST_NOTES_LIST.get(0)).blockingFirst();
 
         // Assert
         verify(noteDao).insertNote(any(Note.class));
@@ -94,7 +110,7 @@ class NoteRepositoryTest {
         assertThrows(Exception.class, new Executable() {
             @Override
             public void execute() throws Throwable {
-                final Note note = new Note(TestUtil.TEST_NOTE_1);
+                final Note note = new Note(TEST_NOTE_1);
                 note.setTitle(null);
                 SUT.insertNote(note);
             }
@@ -115,7 +131,7 @@ class NoteRepositoryTest {
         when(noteDao.updateNote(any(Note.class))).thenReturn(Single.just(updateRow));
 
         // Act
-        final Resource<Integer> returnedValue = SUT.updateNote(TestUtil.TEST_NOTE_1).blockingFirst();
+        final Resource<Integer> returnedValue = SUT.updateNote(TEST_NOTE_1).blockingFirst();
 
         // Assert
         verify(noteDao).updateNote(any(Note.class));
@@ -138,7 +154,7 @@ class NoteRepositoryTest {
         when(noteDao.updateNote(any(Note.class))).thenReturn(returnedData);
 
         // Act
-        final Resource<Integer> returnedValue = SUT.updateNote(TestUtil.TEST_NOTE_1).blockingFirst();
+        final Resource<Integer> returnedValue = SUT.updateNote(TEST_NOTE_1).blockingFirst();
 
         // Assert
         verify(noteDao).updateNote(any(Note.class));
@@ -157,12 +173,119 @@ class NoteRepositoryTest {
         Exception exception = assertThrows(Exception.class, new Executable() {
             @Override
             public void execute() throws Throwable {
-                final Note note = new Note(TestUtil.TEST_NOTE_1);
+                final Note note = new Note(TEST_NOTE_1);
                 note.setTitle(null);
                 SUT.updateNote(note);
             }
         });
 
         assertEquals(NoteRepository.NOTE_TITLE_NULL, exception.getMessage());
+    }
+
+
+    /*
+        Delete note
+        null id
+        throw exception
+     */
+
+    @Test
+    void deleteNote_nullId_throwException() {
+        Exception exception = assertThrows(Exception.class, new Executable() {
+            @Override
+            public void execute() throws Throwable {
+                final Note note = new Note(TEST_NOTE_1);
+                note.setId(-1);
+                SUT.deleteNote(note);
+            }
+        });
+
+        assertEquals(exception.getMessage(), INVALID_NOTE_ID);
+    }
+
+    /*
+        Delete note
+        delete success
+        return Resource.success with deleted row
+     */
+
+    @Test
+    void deleteNote_deleteSuccess_returnResourceSuccess() throws Exception {
+        // Arrange
+        final int deletedRow = 1;
+        Resource<Integer> successResponse = Resource.success(deletedRow, DELETE_SUCCESS);
+        LiveDataTestUtil<Resource<Integer>> liveDataTestUtil = new LiveDataTestUtil<>();
+        when(noteDao.deleteNote(any(Note.class))).thenReturn(Single.just(deletedRow));
+
+        // Act
+        Resource<Integer> observedResource = liveDataTestUtil.getValue(SUT.deleteNote(TEST_NOTE_1));
+
+        // Assert
+        assertEquals(successResponse, observedResource);
+    }
+
+    /*
+        Delete note
+        delete failure
+        return Resource.error
+     */
+
+    @Test
+    void deleteNote_deleteFailure_returnResourceError() throws Exception {
+        // Arrange
+        final int deletedRow = -1;
+        Resource<Integer> errorResponse = Resource.error(null, DELETE_FAILURE);
+        LiveDataTestUtil<Resource<Integer>> liveDataTestUtil = new LiveDataTestUtil<>();
+        when(noteDao.deleteNote(any(Note.class))).thenReturn(Single.just(deletedRow));
+
+        // Act
+        Resource<Integer> observedResource = liveDataTestUtil.getValue(SUT.deleteNote(TEST_NOTE_1));
+
+        // Assert
+        assertEquals(errorResponse, observedResource);
+    }
+
+    /*
+        Retrieve notes
+        return list of notes
+     */
+
+    @Test
+    void getNotes_returnListWithNotes() throws Exception{
+        // Arrange
+        List<Note> notes = TEST_NOTES_LIST;
+        LiveDataTestUtil<List<Note>> liveDataTestUtil = new LiveDataTestUtil<>();
+        MutableLiveData<List<Note>> returnedData = new MutableLiveData<>();
+        returnedData.setValue(notes);
+        when(noteDao.getNotes()).thenReturn(returnedData);
+
+        // Act
+        List<Note> observedData = liveDataTestUtil.getValue(SUT.getNotes());
+
+        // Assert
+
+        assertEquals(notes, observedData);
+    }
+
+    /*
+        Retrieve notes
+        return empty list
+     */
+
+    @Test
+    void getNotes_returnEmptyList() throws Exception{
+        // Arrange
+        List<Note> notes = new ArrayList<>();
+        LiveDataTestUtil<List<Note>> liveDataTestUtil = new LiveDataTestUtil<>();
+        MutableLiveData<List<Note>> returnedData = new MutableLiveData<>();
+        returnedData.setValue(notes);
+        when(noteDao.getNotes()).thenReturn(returnedData);
+
+        // Act
+        List<Note> observedData = liveDataTestUtil.getValue(SUT.getNotes());
+
+        // Assert
+
+        assertEquals(notes, observedData);
     }
 }

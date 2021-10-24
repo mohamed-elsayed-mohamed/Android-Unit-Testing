@@ -1,6 +1,7 @@
 package com.alpha.unittesting.ui.note;
 
 import com.alpha.unittesting.models.Note;
+import com.alpha.unittesting.persistence.NoteDao;
 import com.alpha.unittesting.repository.NoteRepository;
 import com.alpha.unittesting.ui.Resource;
 import com.alpha.unittesting.utils.InstantExecutorExtension;
@@ -15,13 +16,16 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import io.reactivex.Flowable;
+import io.reactivex.Single;
 import io.reactivex.internal.operators.single.SingleToFlowable;
 
+import static com.alpha.unittesting.repository.NoteRepository.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(InstantExecutorExtension.class)
 public class NoteViewModelTest {
@@ -82,8 +86,8 @@ public class NoteViewModelTest {
         Note note = new Note(TestUtil.TEST_NOTE_1);
         LiveDataTestUtil<Resource<Integer>> liveDataTestUtil = new LiveDataTestUtil<>();
         final int insertedRow = 1;
-        Flowable<Resource<Integer>> returnedData = SingleToFlowable.just(Resource.success(insertedRow, NoteRepository.INSERT_SUCCESS));
-        Mockito.when(noteRepository.insertNote(any(Note.class))).thenReturn(returnedData);
+        Flowable<Resource<Integer>> returnedData = SingleToFlowable.just(Resource.success(insertedRow, INSERT_SUCCESS));
+        when(noteRepository.insertNote(any(Note.class))).thenReturn(returnedData);
 
         // Act
         noteViewModel.setNote(note);
@@ -91,7 +95,7 @@ public class NoteViewModelTest {
         Resource<Integer> returnedValue = liveDataTestUtil.getValue(noteViewModel.saveNote());
 
         // Assert
-        assertEquals(Resource.success(insertedRow, NoteRepository.INSERT_SUCCESS), returnedValue);
+        assertEquals(Resource.success(insertedRow, INSERT_SUCCESS), returnedValue);
     }
 
     /*
@@ -108,7 +112,7 @@ public class NoteViewModelTest {
 
 
         // Assert
-        Mockito.verify(noteRepository, Mockito.never()).insertNote(any(Note.class));
+        verify(noteRepository, never()).insertNote(any(Note.class));
     }
 
     /*
@@ -142,8 +146,8 @@ public class NoteViewModelTest {
         Note note = new Note(TestUtil.TEST_NOTE_1);
         LiveDataTestUtil<Resource<Integer>> liveDataTestUtil = new LiveDataTestUtil<>();
         final int updatedRow = 1;
-        Flowable<Resource<Integer>> returnedData = SingleToFlowable.just(Resource.success(updatedRow, NoteRepository.UPDATE_SUCCESS));
-        Mockito.when(noteRepository.updateNote(any(Note.class))).thenReturn(returnedData);
+        Flowable<Resource<Integer>> returnedData = SingleToFlowable.just(Resource.success(updatedRow, UPDATE_SUCCESS));
+        when(noteRepository.updateNote(any(Note.class))).thenReturn(returnedData);
 
         // Act
         noteViewModel.setNote(note);
@@ -151,7 +155,7 @@ public class NoteViewModelTest {
         Resource<Integer> returnedValue = liveDataTestUtil.getValue(noteViewModel.saveNote());
 
         // Assert
-        assertEquals(Resource.success(updatedRow, NoteRepository.UPDATE_SUCCESS), returnedValue);
+        assertEquals(Resource.success(updatedRow, UPDATE_SUCCESS), returnedValue);
     }
 
     /*
@@ -167,7 +171,7 @@ public class NoteViewModelTest {
 
 
         // Assert
-        Mockito.verify(noteRepository, Mockito.never()).updateNote(any(Note.class));
+        verify(noteRepository, never()).updateNote(any(Note.class));
     }
 
     @Test
