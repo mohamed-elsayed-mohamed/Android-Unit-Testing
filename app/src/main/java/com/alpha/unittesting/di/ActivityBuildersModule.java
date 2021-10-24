@@ -1,7 +1,7 @@
 package com.alpha.unittesting.di;
 
+import com.alpha.unittesting.ui.note.NoteActivity;
 import com.alpha.unittesting.ui.noteslist.NotesListActivity;
-
 import dagger.Module;
 import dagger.android.ContributesAndroidInjector;
 
@@ -10,4 +10,7 @@ public abstract  class ActivityBuildersModule {
 
     @ContributesAndroidInjector
     abstract NotesListActivity contributesListActivity();
+
+    @ContributesAndroidInjector
+    abstract NoteActivity contributeActivity();
 }
