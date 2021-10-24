@@ -1,5 +1,7 @@
 package com.alpha.unittesting.repository;
 
+import android.util.Log;
+
 import com.alpha.unittesting.models.Note;
 import com.alpha.unittesting.persistence.NoteDao;
 import com.alpha.unittesting.ui.Resource;
@@ -31,10 +33,10 @@ class NoteRepositoryTest {
     }
 
     /*
-    Insert note
-    verify the correct method is called
-    confirm observer is triggered
-    confirm new rows inserted
+        Insert note
+        verify the correct method is called
+        confirm observer is triggered
+        confirm new rows inserted
      */
 
     @Test
@@ -62,8 +64,8 @@ class NoteRepositoryTest {
     }
 
     /*
-    Insert note
-    Failure (return -1)
+        Insert note
+        Failure (return -1)
      */
 
     @Test
@@ -85,9 +87,9 @@ class NoteRepositoryTest {
     }
 
     /*
-    Insert note
-    null title
-    confirm throw exception
+        Insert note
+        null title
+        confirm throw exception
      */
 
     @Test
@@ -100,5 +102,70 @@ class NoteRepositoryTest {
                 SUT.insertNote(note);
             }
         });
+    }
+
+    /*
+        Update note
+        verify correct method is called
+        confirm observer is trigger
+        confirm number of rows updated
+     */
+
+    @Test
+    void updateNote_returnNumRowsUpdated() throws Exception {
+        // Arrange
+        final int updateRow = 1;
+        when(noteDao.updateNote(any(Note.class))).thenReturn(Single.just(updateRow));
+
+        // Act
+        final Resource<Integer> returnedValue = SUT.updateNote(TestUtil.TEST_NOTE_1).blockingFirst();
+
+        // Assert
+        verify(noteDao).updateNote(any(Note.class));
+        verifyNoMoreInteractions(noteDao);
+
+        assertEquals(Resource.success(updateRow, NoteRepository.UPDATE_SUCCESS), returnedValue);
+    }
+
+    /*
+        Update note
+        Failure (-1)
+     */
+
+    @Test
+    void updateNote_returnFailure() throws Exception {
+        // Arrange
+        final int failedInsert = -1;
+        final Single<Integer> returnedData = Single.just(failedInsert);
+
+        when(noteDao.updateNote(any(Note.class))).thenReturn(returnedData);
+
+        // Act
+        final Resource<Integer> returnedValue = SUT.updateNote(TestUtil.TEST_NOTE_1).blockingFirst();
+
+        // Assert
+        verify(noteDao).updateNote(any(Note.class));
+        verifyNoMoreInteractions(noteDao);
+
+        assertEquals(Resource.error(null, NoteRepository.UPDATE_FAILURE), returnedValue);
+    }
+
+    /*
+        Update note
+        null title
+        throw exception
+     */
+    @Test
+    void updateNote_nullTitle_throwException() throws Exception {
+        Exception exception = assertThrows(Exception.class, new Executable() {
+            @Override
+            public void execute() throws Throwable {
+                final Note note = new Note(TestUtil.TEST_NOTE_1);
+                note.setTitle(null);
+                SUT.updateNote(note);
+            }
+        });
+
+        assertEquals(NoteRepository.NOTE_TITLE_NULL, exception.getMessage());
     }
 }
